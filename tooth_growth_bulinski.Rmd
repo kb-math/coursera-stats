@@ -40,7 +40,7 @@ suppressWarnings(qplot(len_data, dose_data, colour = supp_data))
 
 We wish to test whether the dose or supplement has an effect on the tooth growth. For this, we have several null hypotheses that assert that there is no effect. More specifically, we assume that the len_data are normal random variables and all independent samples (the Guinea pigs are assume to be independently sampled) but different dose/supp combinations have possibly different means and variances. 
 
-Let $\mu_{VC, s}$, respectively $\mu_{OJ,s}$, denote the mean of tooth length data for the VC treatment (respectively, OJ) and supplement dosase $s$ (so $s \in \{0.5, 1.0, 2.0 \}$). Our Null hypothesese are thus the following:
+Let $\mu_{VC, s}$, respectively $\mu_{OJ,s}$, denote the mean of tooth length data for the VC treatment, respectively OJ treatment, and for the supplement dose $s$ (so $s \in \{0.5, 1.0, 2.0 \}$). Our Null hypotheses are thus the following:
 
 \begin{enumerate}
   \item $\mu_{VC, 0.5} = \mu_{VC, 1.0}$ 
@@ -56,7 +56,7 @@ That is, the first four hypotheses assert that increasing the dosage (but fixing
 
 ## Hypothesis testing
 
-We wish to test the seven hypotheses above. As explained above, we assume the data are normal and independent, thus we can apply a two sample t test to the quantities given.
+We wish to test the seven hypotheses above. As explained above, we assume the data are normal and independent, thus we can apply a two sample t test to the quantities given. We aim for a family-wise error rate of 0.05 and so as there are seven hypotheses, we will only reject (via Bonferroni correction) hypotheses with p-values less than $0.05/7$ and consider $(1 - 0.05/7)$-confidence intervals (rather than 95% confidence interval) for the tooth length difference.
 
 ## Results
 
@@ -72,45 +72,75 @@ tooth_data_oj_05 = tooth_data_oj[tooth_data_oj$dose == 0.5,]$len
 tooth_data_oj_10 = tooth_data_oj[tooth_data_oj$dose == 1.0,]$len
 tooth_data_oj_20 = tooth_data_oj[tooth_data_oj$dose == 2.0,]$len
 
-
-```
-
-```{r}
 hypothesis_names <- NULL
 p_values <- NULL
+conf_interval_lower <- NULL
+conf_interval_upper <- NULL
+
+fwer = 0.05
+conf_level = 1 - (fwer/7)
 
 hypothesis_names <- c(hypothesis_names, "VC 1.0 equal to VC 0.5")
-result <- t.test(tooth_data_vc_10, tooth_data_vc_05)
+result <- t.test(tooth_data_vc_10, tooth_data_vc_05, conf.level = conf_level)
 p_values <- c(p_values, result$p.value)
+conf_interval_lower <- c(conf_interval_lower, result$conf.int[1])
+conf_interval_upper <- c(conf_interval_upper, result$conf.int[2])
 
 hypothesis_names <- c(hypothesis_names, "VC 2.0 equal to VC 1.0")
-result <- t.test(tooth_data_vc_20, tooth_data_vc_10)
+result <- t.test(tooth_data_vc_20, tooth_data_vc_10, conf.level = conf_level)
 p_values <- c(p_values, result$p.value)
+conf_interval_lower <- c(conf_interval_lower, result$conf.int[1])
+conf_interval_upper <- c(conf_interval_upper, result$conf.int[2])
 
 hypothesis_names <- c(hypothesis_names, "OJ 1.0 equal to OJ 0.5")
-result <- t.test(tooth_data_oj_10, tooth_data_oj_05)
+result <- t.test(tooth_data_oj_10, tooth_data_oj_05, conf.level = conf_level)
 p_values <- c(p_values, result$p.value)
+conf_interval_lower <- c(conf_interval_lower, result$conf.int[1])
+conf_interval_upper <- c(conf_interval_upper, result$conf.int[2])
 
 hypothesis_names <- c(hypothesis_names, "OJ 2.0 equal to OJ 1.0")
-result <- t.test(tooth_data_oj_20, tooth_data_oj_10)
+result <- t.test(tooth_data_oj_20, tooth_data_oj_10, conf.level = conf_level)
 p_values <- c(p_values, result$p.value)
+conf_interval_lower <- c(conf_interval_lower, result$conf.int[1])
+conf_interval_upper <- c(conf_interval_upper, result$conf.int[2])
 
 hypothesis_names <- c(hypothesis_names, "VC 0.5 equal to OJ 0.5")
-result <- t.test(tooth_data_vc_05, tooth_data_oj_05)
+result <- t.test(tooth_data_vc_05, tooth_data_oj_05, conf.level = conf_level)
 p_values <- c(p_values, result$p.value)
+conf_interval_lower <- c(conf_interval_lower, result$conf.int[1])
+conf_interval_upper <- c(conf_interval_upper, result$conf.int[2])
 
 hypothesis_names <- c(hypothesis_names, "VC 1.0 equal to OJ 1.0")
-result <- t.test(tooth_data_vc_10, tooth_data_oj_10)
+result <- t.test(tooth_data_vc_10, tooth_data_oj_10, conf.level = conf_level)
 p_values <- c(p_values, result$p.value)
+conf_interval_lower <- c(conf_interval_lower, result$conf.int[1])
+conf_interval_upper <- c(conf_interval_upper, result$conf.int[2])
 
 hypothesis_names <- c(hypothesis_names, "VC 2.0 equal to OJ 2.0")
-result <- t.test(tooth_data_vc_20, tooth_data_oj_20)
+result <- t.test(tooth_data_vc_20, tooth_data_oj_20, conf.level = conf_level)
 p_values <- c(p_values, result$p.value)
+conf_interval_lower <- c(conf_interval_lower, result$conf.int[1])
+conf_interval_upper <- c(conf_interval_upper, result$conf.int[2])
 
-df <- data.frame(hypothesis_names,p_values)
-
-pander::pander(df)
+reject_hypothesis <- (p_values < fwer/7)
+df <- data.frame(hypothesis_names,p_values, round(conf_interval_lower,2), 
+                 round(conf_interval_upper,2), reject_hypothesis)
+colnames(df) <- c("Null hypothesis", "p-value", "Conf interval lower", 
+                  "Conf interval upper", "hypothesis rejected?")
 ```
+
+The analysis gave the following results (after running the code in the Appendix below).
+```{r}
+pander::pander(df, split.cells = 15)
+```
+
+The confidence interval provided is a $(1 - 0.05/7)$-confidence interval for the difference of the first treatmend minus the second treatment. So for example, the first row gives a confidence interval for the value $\mu_{VC,1.0} - \mu_{VC,0.5}$ and thus we can assert that a VC treatment with dose 1.0 gives larger length than a VC treatment with dose 0.5. Thus the null hypothesis (of the two being equal) is rejected. 
+
+Note that as our family-wise error rate is desired to be below $0.05$, we only reject a hypothesis if the p-value is less than $0.05/7$. Thus even though the p-value for the hypothesis "OJ 2.0 equal to OJ 1.0" is $0.03<0.05$ we still do not reject the null hypothesis (indeed, the confidence interval contains $0$).
+
+##Conclusion
+
+From the table above, we can summarise that an increase in dose always gives an increase in the length except for OJ at 1.0 and OJ at 2.0, where no statistically significant difference was found. As for keeping the dose the same, OJ performs better than VC at doses 0.5 and 1.0, but at dose 2.0 no statistically significant difference was found.
 
 ## Appendix
 
@@ -125,5 +155,74 @@ tooth_data_vc = tooth_data[tooth_data$supp == "VC",]
 tooth_data_vc_05 = tooth_data_vc[tooth_data_vc$dose == 0.5,]
 
 
+```
+
+```{r, eval = FALSE}
+
+tooth_data_vc = tooth_data[tooth_data$supp == "VC",]
+tooth_data_vc_05 = tooth_data_vc[tooth_data_vc$dose == 0.5,]$len
+tooth_data_vc_10 = tooth_data_vc[tooth_data_vc$dose == 1.0,]$len
+tooth_data_vc_20 = tooth_data_vc[tooth_data_vc$dose == 2.0,]$len
+
+tooth_data_oj = tooth_data[tooth_data$supp == "OJ",]
+tooth_data_oj_05 = tooth_data_oj[tooth_data_oj$dose == 0.5,]$len
+tooth_data_oj_10 = tooth_data_oj[tooth_data_oj$dose == 1.0,]$len
+tooth_data_oj_20 = tooth_data_oj[tooth_data_oj$dose == 2.0,]$len
+
+hypothesis_names <- NULL
+p_values <- NULL
+conf_interval_lower <- NULL
+conf_interval_upper <- NULL
+
+fwer = 0.05
+conf_level = 1 - (fwer/7)
+
+hypothesis_names <- c(hypothesis_names, "VC 1.0 equal to VC 0.5")
+result <- t.test(tooth_data_vc_10, tooth_data_vc_05, conf.level = conf_level)
+p_values <- c(p_values, result$p.value)
+conf_interval_lower <- c(conf_interval_lower, result$conf.int[1])
+conf_interval_upper <- c(conf_interval_upper, result$conf.int[2])
+
+hypothesis_names <- c(hypothesis_names, "VC 2.0 equal to VC 1.0")
+result <- t.test(tooth_data_vc_20, tooth_data_vc_10, conf.level = conf_level)
+p_values <- c(p_values, result$p.value)
+conf_interval_lower <- c(conf_interval_lower, result$conf.int[1])
+conf_interval_upper <- c(conf_interval_upper, result$conf.int[2])
+
+hypothesis_names <- c(hypothesis_names, "OJ 1.0 equal to OJ 0.5")
+result <- t.test(tooth_data_oj_10, tooth_data_oj_05, conf.level = conf_level)
+p_values <- c(p_values, result$p.value)
+conf_interval_lower <- c(conf_interval_lower, result$conf.int[1])
+conf_interval_upper <- c(conf_interval_upper, result$conf.int[2])
+
+hypothesis_names <- c(hypothesis_names, "OJ 2.0 equal to OJ 1.0")
+result <- t.test(tooth_data_oj_20, tooth_data_oj_10, conf.level = conf_level)
+p_values <- c(p_values, result$p.value)
+conf_interval_lower <- c(conf_interval_lower, result$conf.int[1])
+conf_interval_upper <- c(conf_interval_upper, result$conf.int[2])
+
+hypothesis_names <- c(hypothesis_names, "VC 0.5 equal to OJ 0.5")
+result <- t.test(tooth_data_vc_05, tooth_data_oj_05, conf.level = conf_level)
+p_values <- c(p_values, result$p.value)
+conf_interval_lower <- c(conf_interval_lower, result$conf.int[1])
+conf_interval_upper <- c(conf_interval_upper, result$conf.int[2])
+
+hypothesis_names <- c(hypothesis_names, "VC 1.0 equal to OJ 1.0")
+result <- t.test(tooth_data_vc_10, tooth_data_oj_10, conf.level = conf_level)
+p_values <- c(p_values, result$p.value)
+conf_interval_lower <- c(conf_interval_lower, result$conf.int[1])
+conf_interval_upper <- c(conf_interval_upper, result$conf.int[2])
+
+hypothesis_names <- c(hypothesis_names, "VC 2.0 equal to OJ 2.0")
+result <- t.test(tooth_data_vc_20, tooth_data_oj_20, conf.level = conf_level)
+p_values <- c(p_values, result$p.value)
+conf_interval_lower <- c(conf_interval_lower, result$conf.int[1])
+conf_interval_upper <- c(conf_interval_upper, result$conf.int[2])
+
+reject_hypothesis <- (p_values < fwer/7)
+df <- data.frame(hypothesis_names,p_values, round(conf_interval_lower,2), 
+                 round(conf_interval_upper,2), reject_hypothesis)
+colnames(df) <- c("Null hypothesis", "p-value", "Conf interval lower", 
+                  "Conf interval upper", "hypothesis rejected?")
 ```
 

@@ -1,0 +1,78 @@
+---
+title: "A simulation of averages of i.i.d exponential random variables"
+author: Kamil Bulinski
+output:
+  pdf_document: default
+  html_document: default
+date: "2024-05-09"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Setup
+
+Let $X_1, \ldots, X_n$ be i.i.d (independent and identically distributed) exponential random variables with each $X_i$ having distribution $\exp(\lambda)$. It is well known that $X_i$ has mean $\mu = \lambda^{-1}$ and variance $\sigma^2 = \lambda^{-2}$. By the central limit theorem, one expects that the sample mean $$\hat{X} := \frac{1}{n}(X_1 + \cdots X_n)$$ converges (in distribution) to a normal random variable with mean $\mu = \lambda^{-1}$ and variance $\sigma^2/n = \lambda^{-2}/n$.
+
+## Simulation
+
+We run our simulation with $\lambda = 0.2$ and $n=40$. We then sample 1000 different sample means of $\hat{X}$ and store the results in the variable sample_means. We then plot the histogram of the sample_means (we chose $\sqrt{1000} \approx 32$ breaks).
+
+```{r cache=TRUE}
+lambda = 0.2
+n = 40
+
+sample_means = NULL
+for (i in 1:1000) {
+  sample_means = c(sample_means, mean(rexp(n, lambda)))
+}
+
+hist(sample_means, breaks = 32)
+```
+
+Now we complare the mean of our simulation sample_means to the theoretical mean $\mu = \lambda^{-1} = 5$.
+
+```{r cache = TRUE}
+sample_mu = mean(sample_means)
+```
+
+We see that the sample mean is `r sample_mu` which is close to $5$, as expected.
+
+Likewise, let us compare the sample variance to the theoretical variance $\sigma^2/n = \lambda^{-2}/n = 0.2^{-2}/40 =  0.625$
+
+```{r cache = TRUE}
+sample_var = var(sample_means)
+```
+
+Thus the sample variance is `r sample_var`, which is close to the theoretical value $0.625$.
+
+## Comparing the empirical cdf to the Normal cdf
+
+The central limit theorem technically says that the cumulative distribution function (cdf) of $\hat{X}$ should be approximately equal to the cdf of a Normal with mean $\mu = 5$ and variance $\sigma^2/n = 0.625$. In other words, for a fixed real number $x$, we expect that $Prob(\hat{X} \leq x)$ is approximately $\text{pnorm(x, mean = 5, sd = sqrt(0.625))}$.
+
+```{r cache = TRUE}
+#create empirical cdf.
+#This means that cdf_sample_means_func(x) equals the proportion of 
+#sample_means that are less than x.
+cdf_sample_means_func = ecdf(sample_means)
+
+#now we plot the empirical cdf and the cdf of the Normal distribution
+#we plot between the 10% and 90% quantiles of the Normal distribution
+lower_limit = qnorm(0.1, mean = 5, sd = sqrt(0.625))
+upper_limit = qnorm(0.9, mean = 5, sd = sqrt(0.625))
+x  <- seq(lower_limit,  upper_limit, 0.05)
+cdf_sample_means <- cdf_sample_means_func(x)
+cdf_normal <- pnorm(x, mean = 5, sd = sqrt(0.625))
+df <- data.frame(x,cdf_sample_means,cdf_normal)
+
+require(ggplot2)
+
+ggplot(df, aes(x)) +                    # basic graphical object
+  geom_line(aes(y=cdf_sample_means), colour="red") +  # first layer
+  geom_line(aes(y=cdf_normal), colour="green")  # second layer
+
+max_diff_cdf = max(abs(cdf_sample_means - cdf_normal))
+```
+
+The red curve gives the cdf of sample_means (i.e., the probability that a randomly chosen sample_means element is less than x) while the green curve plots the cdf of the Normal distribution. Notice that they are quite close, which is exactly what the Central Limit Theorem says. More specifically, we have computed that the maximum difference of these two cdf's (for our plotted samples above) is equal to max_diff_cdf = `r max_diff_cdf`.

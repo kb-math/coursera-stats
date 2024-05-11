@@ -1,0 +1,129 @@
+---
+title: "Analysis of the effect of Vitamin C supplements on Tooth Growth"
+author: "Kamil Bulinski"
+date: "2024-05-10"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(fig.height=2)
+```
+
+## Overview
+
+The ToothGrowth dataset features three columns and 60 rows. Each row corresponds to a test Guinea pig. The three columns are len, dose, supp which refer to the length of the odontoblasts (cells responsible for tooth growth), the vitamin C dose given (0.5, 1, or 2 mg/day) and the supplement type (VC for absorbic acid and OJ for orange juice). See the appendix for the first few rows of the VC and OJ supplements which demonstrate the structure of the data.
+
+
+
+## Exploratory data analysis
+
+```{r cache = TRUE}
+library(datasets)
+tooth_data = datasets::ToothGrowth
+```
+
+We can conveniently plot the data using a scatterplot as follows.
+
+```{r cache = TRUE}
+library(ggplot2)
+len_data = tooth_data$len
+dose_data = tooth_data$dose
+supp_data = tooth_data$supp
+suppressWarnings(qplot(len_data, dose_data, colour = supp_data))
+
+```
+
+## Hypotheses 
+
+We wish to test whether the dose or supplement has an effect on the tooth growth. For this, we have several null hypotheses that assert that there is no effect. More specifically, we assume that the len_data are normal random variables and all independent samples (the Guinea pigs are assume to be independently sampled) but different dose/supp combinations have possibly different means and variances. 
+
+Let $\mu_{VC, s}$, respectively $\mu_{OJ,s}$, denote the mean of tooth length data for the VC treatment (respectively, OJ) and supplement dosase $s$ (so $s \in \{0.5, 1.0, 2.0 \}$). Our Null hypothesese are thus the following:
+
+\begin{enumerate}
+  \item $\mu_{VC, 0.5} = \mu_{VC, 1.0}$ 
+  \item $\mu_{VC, 1.0} = \mu_{VC, 2.0}$
+  \item $\mu_{OJ, 0.5} = \mu_{OJ, 1.0}$
+  \item $\mu_{OJ, 1.0} = \mu_{OJ, 2.0}$
+  \item $\mu_{VC, 0.5} = \mu_{OJ, 0.5}$
+  \item $\mu_{VC, 1.0} = \mu_{OJ, 1.0}$
+  \item $\mu_{VC, 2.0} = \mu_{OJ, 2.0}$
+\end{enumerate}
+
+That is, the first four hypotheses assert that increasing the dosage (but fixing the supplement type) does not affect the length. The last three hypotheses assert that the dosage type does not matter.
+
+## Hypothesis testing
+
+We wish to test the seven hypotheses above. As explained above, we assume the data are normal and independent, thus we can apply a two sample t test to the quantities given.
+
+## Results
+
+```{r, echo = FALSE}
+
+tooth_data_vc = tooth_data[tooth_data$supp == "VC",]
+tooth_data_vc_05 = tooth_data_vc[tooth_data_vc$dose == 0.5,]$len
+tooth_data_vc_10 = tooth_data_vc[tooth_data_vc$dose == 1.0,]$len
+tooth_data_vc_20 = tooth_data_vc[tooth_data_vc$dose == 2.0,]$len
+
+tooth_data_oj = tooth_data[tooth_data$supp == "OJ",]
+tooth_data_oj_05 = tooth_data_oj[tooth_data_oj$dose == 0.5,]$len
+tooth_data_oj_10 = tooth_data_oj[tooth_data_oj$dose == 1.0,]$len
+tooth_data_oj_20 = tooth_data_oj[tooth_data_oj$dose == 2.0,]$len
+
+
+```
+
+```{r}
+hypothesis_names <- NULL
+p_values <- NULL
+
+hypothesis_names <- c(hypothesis_names, "VC 1.0 equal to VC 0.5")
+result <- t.test(tooth_data_vc_10, tooth_data_vc_05)
+p_values <- c(p_values, result$p.value)
+
+hypothesis_names <- c(hypothesis_names, "VC 2.0 equal to VC 1.0")
+result <- t.test(tooth_data_vc_20, tooth_data_vc_10)
+p_values <- c(p_values, result$p.value)
+
+hypothesis_names <- c(hypothesis_names, "OJ 1.0 equal to OJ 0.5")
+result <- t.test(tooth_data_oj_10, tooth_data_oj_05)
+p_values <- c(p_values, result$p.value)
+
+hypothesis_names <- c(hypothesis_names, "OJ 2.0 equal to OJ 1.0")
+result <- t.test(tooth_data_oj_20, tooth_data_oj_10)
+p_values <- c(p_values, result$p.value)
+
+hypothesis_names <- c(hypothesis_names, "VC 0.5 equal to OJ 0.5")
+result <- t.test(tooth_data_vc_05, tooth_data_oj_05)
+p_values <- c(p_values, result$p.value)
+
+hypothesis_names <- c(hypothesis_names, "VC 1.0 equal to OJ 1.0")
+result <- t.test(tooth_data_vc_10, tooth_data_oj_10)
+p_values <- c(p_values, result$p.value)
+
+hypothesis_names <- c(hypothesis_names, "VC 2.0 equal to OJ 2.0")
+result <- t.test(tooth_data_vc_20, tooth_data_oj_20)
+p_values <- c(p_values, result$p.value)
+
+df <- data.frame(hypothesis_names,p_values)
+
+pander::pander(df)
+```
+
+## Appendix
+
+```{r} 
+head(tooth_data[tooth_data$supp == "VC",])
+head(tooth_data[tooth_data$supp == "OJ",])
+```
+
+```{r, eval = FALSE}
+
+tooth_data_vc = tooth_data[tooth_data$supp == "VC",]
+tooth_data_vc_05 = tooth_data_vc[tooth_data_vc$dose == 0.5,]
+
+
+```
+
